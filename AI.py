@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import OpenAI, APIError
 from requests import post
 from .配置 import API密钥, 机器人令牌
 from .日志 import 日志
@@ -30,7 +30,10 @@ def 获取AI回复(聊天消息):
     )
  
 def 发送AI总结(聊天消息, group_id):
-    消息流 = 获取AI回复(聊天消息)
+    try:
+        消息流 = 获取AI回复(聊天消息)
+    except APIError as 错误:
+        日志.exception(错误)
     # 发送流式消息到云湖服务器，而不是通过CloudFlare代理
     post(f'https://192.144.130.26/open-apis/v1/bot/send-stream?token={机器人令牌}&recvId={group_id}&recvType=group&contentType=markdown',
         data = 生成器(消息流),
