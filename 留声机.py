@@ -6,7 +6,7 @@ from time import time
 from requests import post
 from .数据库 import db, 消息模型, 设置模型
 from .配置 import 机器人令牌
-from .AI import summary
+from .AI import 发送AI总结
 from .日志 import 日志
 
 接口 = Openapi(机器人令牌)
@@ -75,7 +75,7 @@ def 指令消息(事件):
         消息列表=[]
         for 消息 in 消息记录:
             消息列表.append(消息.发送者昵称+': '+消息.文本)
-        summary('\n'.join(消息列表), 聊天ID)
+        发送AI总结('\n'.join(消息列表), 聊天ID)
 
     # 删除指定消息
     elif 事件['message']['commandId'] == 2305:
@@ -133,11 +133,13 @@ def 机器人设置(事件):
     db.session.commit()
 
 # 转义Markdown字符
-模式=compile(f'([{escape(r'!#()*+-.>[\]_`|~')}])')
+字符 = r'!#()*+-.>[\]_`|~'
+模式 = compile(f'([{escape(字符)}])')
+替换字符 = r'\\\1'
 def 设置看板(聊天ID, 消息记录):
     消息列表 = []
     for 消息 in 消息记录:
-        消息列表.append(f'**{消息.发送者昵称}:** {模式.sub(r'\\\1', 消息.文本)}')
+        消息列表.append(f'**{消息.发送者昵称}:** {模式.sub(替换字符, 消息.文本)}')
     接口.SetBotBoard(聊天ID, 'group', '', 'markdown', '\n'.join(消息列表), 0)
 
 def 是管理员(事件):

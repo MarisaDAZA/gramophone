@@ -1,14 +1,14 @@
-from ..db import db
+from db import db
 
 class 消息模型(db.Model):
     __tablename__='消息'
     消息ID = db.Column(db.String(32), primary_key=True)
     发送时间 = db.Column(db.BigInteger)
-    聊天ID = db.Column(db.String(9), db.ForeignKey('message_settings.group_id'))
+    聊天ID = db.Column(db.String(9), db.ForeignKey('设置.聊天ID'))
     文本 = db.Column(db.Text)
     发送者ID = db.Column(db.String(7))
     发送者昵称 = db.Column(db.String(20))
-    __table_args__=(db.Index('消息索引', 'chat_id', 'send_time'),)
+    __table_args__=(db.Index('消息索引', '聊天ID', '发送时间'),)
 
     def __init__(self, 消息ID, 发送时间, 聊天ID, 文本, 发送者ID, 发送者昵称):
         self.消息ID = 消息ID
