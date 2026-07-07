@@ -1,6 +1,6 @@
 from openai import OpenAI, APIError
 from requests import post
-from .配置 import API密钥, 机器人令牌
+from .配置 import API密钥, 机器人令牌, 模型
 from .日志 import 日志
 
 客户端 = OpenAI(
@@ -25,7 +25,7 @@ def 获取AI回复(聊天消息):
                 'content': 聊天消息
             },
         ],
-        model='gemini-3-flash-preview',
+        model=模型,
         stream=True,
     )
  

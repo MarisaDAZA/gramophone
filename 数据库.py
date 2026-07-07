@@ -27,10 +27,10 @@ class 设置模型(db.Model):
     HTML = db.Column(db.Boolean)
     最大消息数 = db.Column(db.Integer)
 
-    def __init__(self, 聊天ID, 最大长度=100, 最多行数=1, Markdown=False, HTML=False, 最大消息数=300):
+    def __init__(self, 聊天ID, 最大长度=100, 最大行数=1, Markdown=False, HTML=False, 最大消息数=300):
         self.聊天ID = 聊天ID
         self.最大长度 = 最大长度
-        self.最多行数 = 最多行数
+        self.最大行数 = 最大行数
         self.Markdown = Markdown
         self.HTML = HTML
-        self.最多消息数 = 最大消息数
+        self.最大消息数 = 最大消息数
