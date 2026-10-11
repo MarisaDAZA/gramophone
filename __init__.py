@@ -57,68 +57,66 @@ def 指令消息(事件):
         return
     聊天ID = 事件['chat']['chatId']
 
-    # 清空留声机
-    if 事件['message']['commandId'] == 2233:
-        if 是管理员(事件):
-            日志.info(f'[群{聊天ID}] 清空留声机')
-            消息模型.query.filter_by(聊天ID=聊天ID).delete()
-            db.session.commit()
-            接口.DismissBotBoard(聊天ID, 'group', '')
+    match 事件['message']['commandId']:
+        case 2233: # 清空留声机
+            if 是管理员(事件):
+                日志.info(f'[群{聊天ID}] 清空留声机')
+                消息模型.query.filter_by(聊天ID=聊天ID).delete()
+                db.session.commit()
+                接口.DismissBotBoard(聊天ID, 'group', '')
 
-    # AI总结
-    elif 事件['message']['commandId'] == 2303:
-        日志.info(f"[群{聊天ID}] AI总结，{事件['message']['content']['text']}个小时。")
-        消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.发送时间 > int( ( time() - 3600*字符串转小数(事件['message']['content']['text'],0) ) *1000 ) ).order_by(消息模型.发送时间).all()
-        if not 消息记录:
-            日志.warning('没有搜索到消息。')
-            return
-        日志.info(f'搜索到{len(消息记录)}条消息。')
-        消息列表=[]
-        for 消息 in 消息记录:
-            消息列表.append(消息.发送者昵称+': '+消息.文本)
-        发送AI总结('\n'.join(消息列表), 聊天ID)
-
-    # 删除指定消息
-    elif 事件['message']['commandId'] == 2305:
-        日志.info(f'[群{聊天ID}] 删除指定消息')
-        # 管理员删除所有指定消息
-        if 是管理员(事件):
-            消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.文本.like(f"%{事件['message']['content']['text']}%")).all()
-        # 非管理员删除自己消息
-        else:
-            消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.sender_id == 事件['sender']['senderId'], 消息模型.文本.like(f"%{事件['message']['content']['text']}%")).all()
-        if not 消息记录:
-            return          
-        for 消息 in 消息记录:
-            撤回(聊天ID, 消息.消息ID) 
-            db.session.delete(消息)
-        db.session.commit()
-        消息记录 = 消息模型.query.filter_by(聊天ID=聊天ID).order_by(消息模型.发送时间.desc()).all()
-        设置看板(聊天ID, 消息记录)
-
-    # 删除指定用户消息
-    elif 事件['message']['commandId'] == 2306:
-        日志.info(f'[群{聊天ID}] 删除指定用户消息')
-        用户ID = 事件['message']['content'].get('at')
-        if not 用户ID:
-            用户ID = [ 事件['message']['content']['text'].strip() ]
-
-        # 非管理员只能删除自己消息
-        if not 是管理员(事件):
-            if 事件['sender']['senderId'] in 用户ID:
-                用户ID = [ 事件['sender']['senderId'] ]
-            else:
+        case 2303: # AI总结
+            日志.info(f"[群{聊天ID}] AI总结，{事件['message']['content']['text']}个小时。")
+            消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.发送时间 > int( ( time() - 3600*字符串转小数(事件['message']['content']['text'],0) ) *1000 ) ).order_by(消息模型.发送时间).all()
+            if not 消息记录:
+                日志.warning('没有搜索到消息。')
                 return
+            日志.info(f'搜索到{len(消息记录)}条消息。')
+            消息列表=[]
+            for 消息 in 消息记录:
+                消息列表.append(消息.发送者昵称+': '+消息.文本)
+            发送AI总结('\n'.join(消息列表), 聊天ID)
 
-        消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.发送者ID.in_(用户ID)).all()
-        if not 消息记录:
-            return
-        for 消息 in 消息记录:
-            撤回(聊天ID, 消息.消息ID)
-            db.session.delete(消息)
-        db.session.commit()
-        消息记录 = 消息模型.query.filter_by(聊天ID=聊天ID).order_by(消息模型.发送时间.desc()).all()
-        设置看板(聊天ID, 消息记录)
+    
+        case 2305: # 删除指定消息
+            日志.info(f'[群{聊天ID}] 删除指定消息')
+            # 管理员删除所有指定消息
+            if 是管理员(事件):
+                消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.文本.like(f"%{事件['message']['content']['text']}%")).all()
+            # 非管理员删除自己消息
+            else:
+                消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.sender_id == 事件['sender']['senderId'], 消息模型.文本.like(f"%{事件['message']['content']['text']}%")).all()
+            if not 消息记录:
+                return          
+            for 消息 in 消息记录:
+                撤回(聊天ID, 消息.消息ID) 
+                db.session.delete(消息)
+            db.session.commit()
+            消息记录 = 消息模型.query.filter_by(聊天ID=聊天ID).order_by(消息模型.发送时间.desc()).all()
+            设置看板(聊天ID, 消息记录)
+
+        case 2306:  # 删除指定用户消息
+            日志.info(f'[群{聊天ID}] 删除指定用户消息')
+            用户ID = 事件['message']['content'].get('at')
+            if not 用户ID:
+                用户ID = [ 事件['message']['content']['text'].strip() ]
+
+            # 非管理员只能删除自己消息
+            if not 是管理员(事件):
+                if 事件['sender']['senderId'] in 用户ID:
+                    用户ID = [ 事件['sender']['senderId'] ]
+                else:
+                    return
+
+            消息记录 = 消息模型.query.filter(消息模型.聊天ID == 聊天ID, 消息模型.发送者ID.in_(用户ID)).all()
+            if not 消息记录:
+                return
+            for 消息 in 消息记录:
+                撤回(聊天ID, 消息.消息ID)
+                db.session.delete(消息)
+            db.session.commit()
+            消息记录 = 消息模型.query.filter_by(聊天ID=聊天ID).order_by(消息模型.发送时间.desc()).all()
+            设置看板(聊天ID, 消息记录)
 
 @订阅.onBotSetting
 def 机器人设置(事件):
@@ -143,7 +141,7 @@ def 机器人设置(事件):
 def 设置看板(聊天ID, 消息记录):
     消息列表 = []
     for 消息 in 消息记录:
-        消息列表.append(f'**{模式.sub(替换字符, 消息.发送者昵称.lstrip())}:** {模式.sub(替换字符, 消息.文本)}')
+        消息列表.append(f'**{模式.sub(替换字符, 消息.发送者昵称.lstrip())}:** {模式.sub(替换字符, 消息.文本.lstrip())}')
     接口.SetBotBoard(聊天ID, 'group', '', 'markdown', '\n'.join(消息列表), 0)
 
 def 是管理员(事件):

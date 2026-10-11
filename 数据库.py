@@ -1,4 +1,4 @@
-from db import db
+from ..db import db
 
 class 消息模型(db.Model):
     __tablename__='消息'

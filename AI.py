@@ -1,11 +1,11 @@
 from openai import OpenAI, APIError
 from requests import post
-from .配置 import API密钥, 机器人令牌, 模型
+from .配置 import API密钥, 机器人令牌, 模型, 基础网址
 from .日志 import 日志
 
 客户端 = OpenAI(
     api_key = API密钥,
-    base_url = 'https://generativelanguage.googleapis.com/v1beta/openai/',
+    base_url = 基础网址,
 )
 
 def 生成器(消息流):
