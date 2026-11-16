@@ -32,10 +32,10 @@ def 普通消息(事件):
     or 设置.Markdown and 消息类型 == 'markdown' \
     or 设置.HTML and 消息类型 == 'html':
         发送者ID = 事件['sender']['senderId']
-        if 发送者ID in 设置.黑名单.split():
+        if 设置.黑名单 and 发送者ID in 设置.黑名单.split():
             return
         文本 = 事件['message']['content'].get('text')
-        if any(search(模式, 文本) for 模式 in 设置.屏蔽词.splitlines() if 模式.strip()):
+        if 设置.屏蔽词 and any(search(模式, 文本) for 模式 in 设置.屏蔽词.splitlines() if 模式.strip()):
             return
         if 文本 and len(文本) <= 设置.最大长度 and 文本.count('\n') < 设置.最大行数:
             消息 = 消息模型(
