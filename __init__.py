@@ -1,4 +1,4 @@
-from re import escape, compile
+from re import escape, compile, search
 from json import loads
 from yunhu.openapi import Openapi
 from yunhu.subscription import Subscription
@@ -20,25 +20,31 @@ def 普通消息(事件):
 
     # 获取群聊设置
     聊天ID = 事件['chat']['chatId']
+    消息类型 = 事件['message']['contentType']
     设置 = 设置模型.query.get(聊天ID)
     if not 设置:
-        设置 = 设置模型(聊天ID)
+        设置 = 设置模型(聊天ID = 聊天ID)
         db.session.add(设置)
-        db.session.commit() 
+        db.session.commit()
 
     # 储存消息到数据库
-    if 事件['message']['contentType'] == 'text' \
-    or 设置.Markdown and 事件['message']['contentType'] == 'markdown' \
-    or 设置.HTML and 事件['message']['contentType'] == 'html':
+    if 消息类型 == 'text' \
+    or 设置.Markdown and 消息类型 == 'markdown' \
+    or 设置.HTML and 消息类型 == 'html':
+        发送者ID = 事件['sender']['senderId']
+        if 发送者ID in 设置.黑名单.split():
+            return
         文本 = 事件['message']['content'].get('text')
+        if any(search(模式, 文本) for 模式 in 设置.屏蔽词.splitlines() if 模式.strip()):
+            return
         if 文本 and len(文本) <= 设置.最大长度 and 文本.count('\n') < 设置.最大行数:
             消息 = 消息模型(
-                事件['message']['msgId'],
-                事件['message']['sendTime'],
-                聊天ID,
-                文本,
-                事件['sender']['senderId'],
-                事件['sender']['senderNickname'],
+                消息ID = 事件['message']['msgId'],
+                发送时间 = 事件['message']['sendTime'],
+                聊天ID = 聊天ID,
+                文本 = 文本,
+                发送者ID = 发送者ID,
+                发送者昵称 = 事件['sender']['senderNickname']
             )
             db.session.add(消息)
             db.session.commit()
@@ -124,12 +130,14 @@ def 机器人设置(事件):
     日志.info(f'[群{聊天ID}] 机器人设置')
     设置JSON = loads(事件['settingJson'])
     设置 = 设置模型(
-        聊天ID,
-        字符串转整数(设置JSON['ckdqox']['value'], 100),
-        字符串转整数(设置JSON['qmkrjb']['value'], 1),
-        设置JSON['xqlsnd']['value'],
-        设置JSON['jyljsb']['value'],
-        字符串转整数(设置JSON['tlyguo']['value'], 300)
+        聊天ID = 聊天ID,
+        最大长度 = 字符串转整数(设置JSON['ckdqox']['value'], 100),
+        最大行数 = 字符串转整数(设置JSON['qmkrjb']['value'], 1),
+        Markdown = 设置JSON['xqlsnd']['value'],
+        HTML = 设置JSON['jyljsb']['value'],
+        最大消息数 = 字符串转整数(设置JSON['tlyguo']['value'], 300),
+        黑名单 = 设置JSON['qedthc']['value'],
+        屏蔽词 = 设置JSON['wxmury']['value']
     )
     db.session.merge(设置)
     db.session.commit()
