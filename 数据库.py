@@ -13,10 +13,10 @@ class 消息模型(db.Model):
 class 设置模型(db.Model):
     __tablename__ = '设置'
     聊天ID = db.Column(db.String(9),  primary_key=True)
-    最大长度 = db.Column(db.Integer)
-    最大行数 = db.Column(db.Integer)
+    最大长度 = db.Column(db.Integer, default=100)
+    最大行数 = db.Column(db.Integer, default=1)
     Markdown = db.Column(db.Boolean)
     HTML = db.Column(db.Boolean)
-    最大消息数 = db.Column(db.Integer)
-    黑名单 = db.Column(db.Text)
-    屏蔽词 = db.Column(db.Text)
+    最大消息数 = db.Column(db.Integer, default=300)
+    黑名单 = db.Column(db.Text, default='')
+    屏蔽词 = db.Column(db.Text, default='')
